@@ -1,12 +1,9 @@
 import uvicorn
 from fastapi import FastAPI
 
-from utils.service_config import get_var
+from utils.service_config import HOST, PORT
 
 app = FastAPI()
-
-HOST = get_var("HOST")
-PORT = int(get_var("PORT"))
 
 
 @app.get("/")
