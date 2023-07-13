@@ -1,0 +1,7 @@
+venv/
+.idea
+.env
+.DS_store
+__pycache__
+
+!.env.sample
