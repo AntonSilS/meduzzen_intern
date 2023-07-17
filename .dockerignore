@@ -1,4 +1,6 @@
-
-*/venv*
-
+venv
+.idea
+.DS_store
+__pycache__
+.pytest_cache
 
