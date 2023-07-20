@@ -2,10 +2,50 @@ version: '3'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+
     volumes:
       - .:/app/
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_SERVER=${POSTGRES_SERVER}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
     ports:
+      - ${APP_PORT}:${APP_PORT}
+    depends_on:
+      - postgres_db
+      - redis
+
+  postgres_db:
+    image: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    expose:
+      - ${POSTGRES_PORT}
+
+  redis:
+    image: redis
+    container_name: redis
+
+    volumes:
+      - redis_data:/data
+    env_file:
+      - .env
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+
+
+volumes:
+  redis_data:
+  postgres_data:
       - ${PORT}:${PORT}
+
