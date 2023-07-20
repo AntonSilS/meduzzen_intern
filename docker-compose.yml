@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+
     volumes:
       - .:/app/
     env_file:
@@ -46,3 +47,5 @@ services:
 volumes:
   redis_data:
   postgres_data:
+      - ${PORT}:${PORT}
+
