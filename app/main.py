@@ -1,11 +1,14 @@
+import logging
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from session import init_postgres_db, init_redis_db
+from core.log_config import LoggingConfig
+from db.connect import init_postgres_db, init_redis_db
 from utils.service_config import settings
 
 app = FastAPI()
+LoggingConfig.configure_logging()
 
 origins = [
     settings.BASE_URL
@@ -28,6 +31,7 @@ async def on_startup():
 
 @app.get("/")
 async def health_check():
+    logging.info("Request to the root route")
     return {
         "status_code": 200,
         "detail": "ok",

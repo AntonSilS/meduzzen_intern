@@ -8,3 +8,8 @@ Then open "localhost:8001" in browser
 
 4. For running testing in docker execute:
 docker-compose exec app pytest .
+
+5. Commands for making and applying migrations:
+ - alembic init -t async migrations 
+ - alembic revision --autogenerate -m 'Init' 
+ - alembic upgrade head
