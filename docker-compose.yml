@@ -29,8 +29,8 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - .env
-    expose:
-      - ${POSTGRES_PORT}
+    ports:
+      - ${POSTGRES_PORT}:${POSTGRES_PORT}
 
   redis:
     image: redis
@@ -47,5 +47,4 @@ services:
 volumes:
   redis_data:
   postgres_data:
-      - ${PORT}:${PORT}
 
