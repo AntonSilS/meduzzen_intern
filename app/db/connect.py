@@ -3,6 +3,7 @@ import redis.asyncio as redis
 from sqlmodel.ext.asyncio.session import AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
+from sqlmodel import SQLModel, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from core.log_config import LoggingConfig
@@ -10,7 +11,7 @@ from utils.service_config import settings
 
 SQLALCHEMY_POSTGRES_URL = settings.POSTGRES_URL
 
-engine = AsyncEngine(create_async_engine(SQLALCHEMY_POSTGRES_URL, echo=True, future=True))
+engine = create_async_engine(SQLALCHEMY_POSTGRES_URL, echo=True, future=True)
 
 Base = declarative_base()
 
@@ -23,7 +24,7 @@ async def init_postgres_db():
         logging.info("Ping successful to Postgres: True")
 
     except Exception as e:
-        logging.info(f"Exception during conn to Postgres: {e}")
+        logging.error(f"Exception during conn to Postgres: {e}")
 
 
 async def init_redis_db():
@@ -32,7 +33,8 @@ async def init_redis_db():
         logging.info(f"Ping successful to Redis: {await connection.ping()}")
         await connection.close()
     except Exception as e:
-        logging.info(f"Exception during conn to Redis: {e}")
+        logging.error(f"Exception during conn to Redis: {e}")
+
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

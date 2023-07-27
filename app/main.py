@@ -3,11 +3,15 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+
+
 from core.log_config import LoggingConfig
+from routers.users import router
 from db.connect import init_postgres_db, init_redis_db
 from utils.service_config import settings
 
 app = FastAPI()
+
 LoggingConfig.configure_logging()
 
 origins = [
@@ -21,6 +25,9 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+
+app.include_router(router)
 
 
 @app.on_event("startup")
