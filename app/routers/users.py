@@ -11,21 +11,34 @@ from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus
 from db.models import User as UserFromModels
 
 router = APIRouter(prefix="/users")
-
 LoggingConfig.configure_logging()
 
 
+def get_user_instance(async_session: AsyncSession = Depends(get_session)) -> User:
+    return User(async_session)
+
+
+def get_users_instance(async_session: AsyncSession = Depends(get_session)) -> Users:
+    return Users(async_session)
+
+
 @router.get("/", response_model=List[UserDetailResponse])
-async def get_users(pagination: PaginationParams = Depends(), async_session: AsyncSession = Depends(get_session)):
-    all_users = await Users.paginate_query(UserFromModels, pagination.page, pagination.page_size, async_session)
+async def get_users(
+        pagination: PaginationParams = Depends(),
+        users_instance: Users = Depends(get_users_instance)
+):
+    all_users = await users_instance.paginate_query(UserFromModels, pagination.page, pagination.page_size)
     logging.info("Got all users")
     return all_users
 
 
 @router.get("/{user_id}", response_model=UserDetailResponse)
-async def get_user(user_id: int, async_session: AsyncSession = Depends(get_session)):
+async def get_user(
+        user_id: int,
+        user_instance: User = Depends(get_user_instance)
+):
     try:
-        cur_user = await User.get(async_session, user_id)
+        cur_user = await user_instance.get(user_id)
         logging.info(f"Got users: {cur_user.username} (id: {cur_user.id})")
         return cur_user
 
@@ -34,24 +47,29 @@ async def get_user(user_id: int, async_session: AsyncSession = Depends(get_sessi
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user")
 
 
-@router.post("/", response_model=UserDetailResponse,
-             status_code=status.HTTP_201_CREATED)
-async def create_user(user_req_body: SignUpRequestModel, async_session: AsyncSession = Depends(get_session)):
+@router.post("/", response_model=UserDetailResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+        user_req_body: SignUpRequestModel,
+        user_instance: User = Depends(get_user_instance)
+):
     try:
-        new_user = await User.create(async_session, user_req_body)
+        new_user = await user_instance.create(user_req_body)
         logging.info(f"Created new user: {new_user.username} (id: {new_user.id})")
         return new_user
 
     except IntegrityError:
-        logging.error("Tried to create existent user")
+        logging.error("Tried to create an existing user")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
 
 
 @router.put("/{user_id}", response_model=UserDetailResponse)
-async def update_user(user_id: int, user_req_body: UserUpdateRequestModel,
-                      async_session: AsyncSession = Depends(get_session)):
+async def update_user(
+        user_id: int,
+        user_req_body: UserUpdateRequestModel,
+        user_instance: User = Depends(get_user_instance)
+):
     try:
-        user = await User.update(async_session, user_req_body, user_id)
+        user = await user_instance.update(user_req_body, user_id)
         logging.info(f"Updated user: {user.username} (id: {user.id})")
         return user
 
@@ -61,15 +79,17 @@ async def update_user(user_id: int, user_req_body: UserUpdateRequestModel,
 
     except IntegrityError:
         logging.error("Tried to change fields with non-unique name or email")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                            detail="User with such name or email is already exist")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with such name or email already exists")
 
 
 @router.patch("/{user_id}", response_model=UserDetailResponse)
-async def update_status_user(user_id: int, user_req_body: UserStatus,
-                             async_session: AsyncSession = Depends(get_session)):
+async def update_status_user(
+        user_id: int,
+        user_req_body: UserStatus,
+        user_instance: User = Depends(get_user_instance)
+):
     try:
-        user = await User.update(async_session, user_req_body, user_id)
+        user = await user_instance.update_status(user_req_body, user_id)
         logging.info(f"Updated status of user: {user.username} (id: {user.id})")
         return user
 
@@ -79,10 +99,13 @@ async def update_status_user(user_id: int, user_req_body: UserStatus,
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, async_session: AsyncSession = Depends(get_session)):
+async def delete_user(
+        user_id: int,
+        user_instance: User = Depends(get_user_instance)
+):
     try:
         logging.info(f"User with user_id: {user_id} was deleted")
-        await User.delete(async_session, user_id)
+        await user_instance.delete(user_id)
         return {f"{user_id}": "deleted"}
 
     except NoResultFound:
