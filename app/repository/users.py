@@ -20,7 +20,7 @@ class Paginateable:
         return users
 
 
-class Users(Paginateable):
+class UsersRepository(Paginateable):
 
     def __init__(self, async_session: AsyncSession):
         super().__init__(async_session)
@@ -32,7 +32,7 @@ class Users(Paginateable):
         return users
 
 
-class User:
+class UserRepository:
 
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
@@ -49,7 +49,10 @@ class User:
         return user
 
     async def create(self, body: SignUpRequestModel) -> UserFromModels:
-        new_user = UserFromModels(username=body.username, email=body.email, hash_password=body.hash_password)
+        new_user = UserFromModels(
+            username=body.username, email=body.email,
+            password=body.password
+        )
         self.async_session.add(new_user)
         await self.async_session.commit()
         await self.async_session.refresh(new_user)

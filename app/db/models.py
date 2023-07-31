@@ -8,10 +8,10 @@ from constants import USERNAME_MAXLENGTH, EMAIl_MAXLENGTH, USERSTATUS_MAXLENGTH
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
-    username = Column(String(USERNAME_MAXLENGTH), nullable=False, unique=True)
+    username = Column(String(USERNAME_MAXLENGTH), nullable=False)
     email = Column(String(EMAIl_MAXLENGTH), nullable=False, unique=True)
     phones = Column(ARRAY(String), default=list)
-    hash_password = Column(String, nullable=False)
+    password = Column(String, nullable=False)
     is_active = Column(Boolean, default=False)
     status = Column(String(USERSTATUS_MAXLENGTH), default="registered")
     created = Column(DateTime, default=func.now())

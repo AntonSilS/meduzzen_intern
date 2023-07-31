@@ -35,14 +35,14 @@ class UserUpdateRequestModel(BaseModel):
     username: Optional[str] = Field(None, max_length=USERNAME_MAXLENGTH)
     email: Optional[str] = Field(None, max_length=EMAIl_MAXLENGTH)
     phones: Optional[List[str]] = None
-    hash_password: Optional[str] = Field(None, min_length=PASSWORD_MINLENGTH)
+    password: Optional[str] = Field(None, min_length=PASSWORD_MINLENGTH)
     is_active: Optional[bool] = None
     status: Optional[str] = Field(None, max_length=USERSTATUS_MAXLENGTH)
 
 
 class SignInRequestModel(BaseModel):
     email: EmailStr
-    hash_password: str = Field(min_length=PASSWORD_MINLENGTH)
+    password: str = Field(min_length=PASSWORD_MINLENGTH)
 
 
 class SignUpRequestModel(SignInRequestModel):

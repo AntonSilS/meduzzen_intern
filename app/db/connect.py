@@ -1,9 +1,8 @@
 import logging
 import redis.asyncio as redis
-from sqlmodel.ext.asyncio.session import AsyncSession, AsyncEngine
+from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-from sqlmodel import SQLModel, create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from core.log_config import LoggingConfig
