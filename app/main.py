@@ -28,7 +28,6 @@ app.include_router(auth.router)
 app.include_router(users.router)
 
 
-
 @app.on_event("startup")
 async def on_startup():
     await init_postgres_db()
