@@ -1,3 +1,0 @@
-2023-07-23 20:26:41,725 - INFO - Ping successful to Postgres
-2023-07-23 20:26:41,735 - INFO - Ping successful to Redis: True
-2023-07-23 20:26:45,357 - INFO - Request to the root route

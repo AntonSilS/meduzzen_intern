@@ -66,7 +66,6 @@ async def get_user(
 #         logging.error("Tried to create an existing user")
 #         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
 
-
 @router.put("/{user_id}", response_model=UserDetailResponse)
 async def update_user(
         current_user: Annotated[UserFromModels, Depends(get_current_user)],
