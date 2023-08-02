@@ -2,7 +2,6 @@ import logging
 from datetime import timedelta
 from typing import Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 

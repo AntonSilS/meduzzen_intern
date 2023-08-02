@@ -38,19 +38,11 @@ class UserRepository:
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
 
-
     def update_entity_fields(self, user: UserFromModels, body: UserUpdateRequestModel):
         res = {key: value for key, value in dict(body).items() if value is not None}
         for field, value in res.items():
             setattr(user, field, value)
 
-    # def check_login(self, login):
-    #     stmt = ""
-    #     if "@" in login:
-    #         stmt = select(UserFromModels).where(UserFromModels.email == login)
-    #     else:
-    #         stmt = select(UserFromModels).where(UserFromModels.username == login)
-    #     return stmt
     async def get(self, user_id: int) -> UserFromModels:
         stmt = select(UserFromModels).where(UserFromModels.id == user_id)
         res = await self.async_session.execute(stmt)

@@ -1,5 +1,5 @@
 import jwt as pyjwt
-from typing import Dict
+from typing import Dict, Union
 from jose import JWTError, jwt as jose_jwt
 from abc import ABC,abstractmethod
 
@@ -13,13 +13,13 @@ class IToken(ABC):
         self.config = settings
 
     @abstractmethod
-    def verify(self) -> Dict:
+    def verify(self):
         pass
 
 
 class VerifyCustomToken(IToken):
 
-    def verify(self):
+    def verify(self) -> Dict[str, Union[str, dict]]:
         try:
             payload = jose_jwt.decode(self.token.credentials, self.config.SECRET_KEY, algorithms=[self.config.ALGORITHM])
             return {"payload": payload, "mark": "custom_token_mark"}

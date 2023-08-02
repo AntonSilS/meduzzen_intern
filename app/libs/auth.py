@@ -1,6 +1,6 @@
 
 from datetime import datetime, timedelta
-from typing import Annotated
+from typing import Annotated, Dict, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer
 from jose import jwt
@@ -16,7 +16,7 @@ from .tokens import VerifyCustomToken, VerifyAuth0Token
 token_auth_scheme = HTTPBearer()
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
+def create_access_token(data: Dict[str, str], expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
@@ -28,7 +28,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def get_login(payload, token_mark, credentials_exception) -> str:
+def get_login(payload: Dict[str, str], token_mark: str, credentials_exception: HTTPException) -> str:
     if token_mark == "auth0_mark":
         login = payload.get("email")
 
@@ -43,7 +43,7 @@ def get_login(payload, token_mark, credentials_exception) -> str:
 async def get_current_user(
         token: Annotated[str, Depends(token_auth_scheme)],
         async_session: AsyncSession = Depends(get_session)
-) -> UserFromModels:#додати exception якщо прострочений токен! або невірний
+) -> UserFromModels:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -57,15 +57,15 @@ async def get_current_user(
         if payload_with_mark.get("status"):
             raise credentials_exception
 
-    payload = payload_with_mark["payload"]
-    token_mark = payload_with_mark["mark"]
+    payload = payload_with_mark.get("payload")
+    token_mark = payload_with_mark.get("mark")
 
-    login = get_login(payload, token_mark, credentials_exception)
+    login = get_login(payload=payload, token_mark=token_mark, credentials_exception=credentials_exception)
 
-    current_user: UserFromModels = await UserFromRepository(async_session).get_user_by_login(login)
+    current_user: UserFromModels = await UserFromRepository(async_session).get_user_by_login(login=login)
     if current_user is None and token_mark == "auth0_mark":
         user_model = SignUpRequestModel(username=login, email=login, password=login)
-        current_user: UserFromModels = await UserFromRepository(async_session).create(user_model)
+        current_user: UserFromModels = await UserFromRepository(async_session).create(body=user_model)
     elif current_user is None:
         raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -8,7 +8,7 @@ from core.log_config import LoggingConfig
 from libs.auth import get_current_user
 from repository.users import UsersRepository, UserRepository
 from db.connect import get_session
-from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
+from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
 from db.models import User as UserFromModels
 
 router = APIRouter(prefix="/users", tags=["user"])
@@ -50,21 +50,6 @@ async def get_user(
     except NoResultFound:
         logging.error("Tried to get non-existent user")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user")
-
-
-# @router.post("/", response_model=UserDetailResponse, status_code=status.HTTP_201_CREATED)
-# async def create_user(
-#         user_req_body: SignUpRequestModel,
-#         user_instance: UserRepository = Depends(get_user_instance)
-# ):
-#     try:
-#         new_user = await user_instance.create(body=user_req_body)
-#         logging.info(f"Created new user: {new_user.username} (id: {new_user.id})")
-#         return new_user
-#
-#     except IntegrityError:
-#         logging.error("Tried to create an existing user")
-#         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
 
 
 @router.put("/{user_id}", response_model=UserDetailResponse)
