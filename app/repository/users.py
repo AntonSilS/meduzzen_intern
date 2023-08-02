@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from db.models import User as UserFromModels
-from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus
+from libs.hash import Hash
+from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus, SignInRequestModel
 from db.connect import Base
 
 
@@ -51,7 +52,7 @@ class UserRepository:
     async def create(self, body: SignUpRequestModel) -> UserFromModels:
         new_user = UserFromModels(
             username=body.username, email=body.email,
-            password=body.password
+            password=Hash.get_password_hash(body.password)
         )
         self.async_session.add(new_user)
         await self.async_session.commit()
@@ -85,3 +86,9 @@ class UserRepository:
         if user:
             await self.async_session.delete(user)
             await self.async_session.commit()
+
+    async def get_user_by_login(self, login) -> UserFromModels:
+        stmt = select(UserFromModels).where(UserFromModels.email == login)
+        res = await self.async_session.execute(stmt)
+        user = res.scalars().first()
+        return user

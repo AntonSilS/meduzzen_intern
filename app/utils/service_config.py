@@ -20,5 +20,15 @@ class Settings:
     REDIS_PORT = int(os.getenv("REDIS_PORT"))
     REDIS_HOST = os.getenv("REDIS_HOST")
 
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
+    EXPIRE_TOKEN = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+
+    DOMAIN = os.getenv("DOMAIN")
+    API_AUDIENCE = os.getenv("API_AUDIENCE")
+    ISSUER = os.getenv("ISSUER")
+    ALGORITHMS = os.getenv("ALGORITHMS"),
+
+
 
 settings = Settings()

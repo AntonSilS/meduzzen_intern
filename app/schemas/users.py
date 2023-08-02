@@ -28,7 +28,7 @@ class UserDetailResponse(UserBase):
 
 
 class UserStatus(BaseModel):
-    status: str = Field(max_length=USERSTATUS_MAXLENGTH, )
+    status: str = Field(max_length=USERSTATUS_MAXLENGTH, default="registered")
 
 
 class UserUpdateRequestModel(BaseModel):
