@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from db.models import User as UserFromModels
-from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus
+from libs.hash import Hash
+from schemas.users import SignUpRequestModel, UserUpdateRequestModel, UserStatus, SignInRequestModel
 from db.connect import Base
 
 
@@ -20,7 +21,7 @@ class Paginateable:
         return users
 
 
-class Users(Paginateable):
+class UsersRepository(Paginateable):
 
     def __init__(self, async_session: AsyncSession):
         super().__init__(async_session)
@@ -32,16 +33,24 @@ class Users(Paginateable):
         return users
 
 
-class User:
+class UserRepository:
 
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
+
 
     def update_entity_fields(self, user: UserFromModels, body: UserUpdateRequestModel):
         res = {key: value for key, value in dict(body).items() if value is not None}
         for field, value in res.items():
             setattr(user, field, value)
 
+    # def check_login(self, login):
+    #     stmt = ""
+    #     if "@" in login:
+    #         stmt = select(UserFromModels).where(UserFromModels.email == login)
+    #     else:
+    #         stmt = select(UserFromModels).where(UserFromModels.username == login)
+    #     return stmt
     async def get(self, user_id: int) -> UserFromModels:
         stmt = select(UserFromModels).where(UserFromModels.id == user_id)
         res = await self.async_session.execute(stmt)
@@ -49,7 +58,10 @@ class User:
         return user
 
     async def create(self, body: SignUpRequestModel) -> UserFromModels:
-        new_user = UserFromModels(username=body.username, email=body.email, hash_password=body.hash_password)
+        new_user = UserFromModels(
+            username=body.username, email=body.email,
+            password=Hash.get_password_hash(body.password)
+        )
         self.async_session.add(new_user)
         await self.async_session.commit()
         await self.async_session.refresh(new_user)
@@ -82,3 +94,9 @@ class User:
         if user:
             await self.async_session.delete(user)
             await self.async_session.commit()
+
+    async def get_user_by_login(self, login) -> UserFromModels:
+        stmt = select(UserFromModels).where(UserFromModels.email == login)
+        res = await self.async_session.execute(stmt)
+        user = res.scalars().first()
+        return user
