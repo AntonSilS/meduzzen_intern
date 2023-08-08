@@ -2,7 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 
-from constants import USERNAME_MAXLENGTH, EMAIl_MAXLENGTH, PASSWORD_MINLENGTH, USERSTATUS_MAXLENGTH
+from constants import USERNAME_MAXLENGTH, PASSWORD_MINLENGTH, USERSTATUS_MAXLENGTH
 
 
 class PaginationParams(BaseModel):
@@ -33,7 +33,6 @@ class UserStatus(BaseModel):
 
 class UserUpdateRequestModel(BaseModel):
     username: Optional[str] = Field(None, max_length=USERNAME_MAXLENGTH)
-    email: Optional[str] = Field(None, max_length=EMAIl_MAXLENGTH)
     phones: Optional[List[str]] = None
     password: Optional[str] = Field(None, min_length=PASSWORD_MINLENGTH)
     is_active: Optional[bool] = None

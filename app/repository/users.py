@@ -40,7 +40,10 @@ class UserRepository:
 
     def update_entity_fields(self, user: UserFromModels, body: UserUpdateRequestModel):
         res = {key: value for key, value in dict(body).items() if value is not None}
+
         for field, value in res.items():
+            if field == "password":
+                value = Hash.get_password_hash(value)
             setattr(user, field, value)
 
     async def get(self, user_id: int) -> UserFromModels:
@@ -59,7 +62,7 @@ class UserRepository:
         await self.async_session.refresh(new_user)
         return new_user
 
-    async def update(self, body: UserUpdateRequestModel, user_id: int):
+    async def update(self, body: UserUpdateRequestModel, user_id: int) -> UserFromModels:
         stmt = select(UserFromModels).where(UserFromModels.id == user_id)
         res = await self.async_session.execute(stmt)
         user = res.scalars().one()
@@ -69,7 +72,7 @@ class UserRepository:
             await self.async_session.refresh(user)
         return user
 
-    async def update_status(self, body: UserStatus, user_id: int):
+    async def update_status(self, body: UserStatus, user_id: int) -> UserFromModels:
         stmt = select(UserFromModels).where(UserFromModels.id == user_id)
         res = await self.async_session.execute(stmt)
         user = res.scalars().one()

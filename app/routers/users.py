@@ -9,6 +9,8 @@ from libs.auth import get_current_user
 from repository.users import UsersRepository, UserRepository
 from db.connect import get_session
 from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
+from schemas.auth import UserWithPermission
+
 from db.models import User as UserFromModels
 
 router = APIRouter(prefix="/users", tags=["user"])
@@ -21,6 +23,18 @@ def get_user_instance(async_session: AsyncSession = Depends(get_session)) -> Use
 
 def get_users_instance(async_session: AsyncSession = Depends(get_session)) -> UsersRepository:
     return UsersRepository(async_session)
+
+
+def is_superuser(current_user: UserFromModels) -> bool:
+    return current_user.is_superuser
+
+
+def user_permission(current_user: Annotated[UserFromModels, Depends(get_current_user)], user_id: int) -> UserFromModels:
+    if is_superuser(current_user) or current_user.id == user_id:
+        logging.error(f"User with: user_id - {current_user.id} and name - {current_user.username} got permission")
+        return current_user
+    else:
+        raise HTTPException(status_code=403, detail="Forbidden action")
 
 
 @router.get("/", response_model=List[UserDetailResponse])
@@ -54,9 +68,9 @@ async def get_user(
 
 @router.put("/{user_id}", response_model=UserDetailResponse)
 async def update_user(
-        current_user: Annotated[UserFromModels, Depends(get_current_user)],
         user_id: int,
         user_req_body: UserUpdateRequestModel,
+        current_user: UserWithPermission = Depends(user_permission),
         user_instance: UserRepository = Depends(get_user_instance)
 ):
     try:
@@ -75,9 +89,9 @@ async def update_user(
 
 @router.patch("/{user_id}", response_model=UserDetailResponse)
 async def update_status_user(
-        current_user: Annotated[UserFromModels, Depends(get_current_user)],
         user_id: int,
         user_req_body: UserStatus,
+        current_user: UserWithPermission = Depends(user_permission),
         user_instance: UserRepository = Depends(get_user_instance)
 ):
     try:
@@ -90,16 +104,16 @@ async def update_status_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found user")
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=status.HTTP_202_ACCEPTED)
 async def delete_user(
-        current_user: Annotated[UserFromModels, Depends(get_current_user)],
         user_id: int,
-        user_instance: UserRepository = Depends(get_user_instance)
+        current_user: UserWithPermission = Depends(user_permission),
+        user_instance: UserRepository = Depends(get_user_instance),
 ):
     try:
         await user_instance.delete(user_id=user_id)
         logging.info(f"User with user_id: {user_id} was deleted")
-        return {f"{user_id}": "deleted"}
+        return {f"User with id:{user_id} - deleted"}
 
     except NoResultFound:
         logging.error("Tried to get non-existent user")
