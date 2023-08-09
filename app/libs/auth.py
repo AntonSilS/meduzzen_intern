@@ -1,4 +1,3 @@
-
 from datetime import datetime, timedelta
 from typing import Annotated, Dict, Any
 from fastapi import Depends, HTTPException, status
@@ -68,8 +67,8 @@ async def get_current_user(
         current_user: UserFromModels = await UserFromRepository(async_session).create(body=user_model)
     elif current_user is None:
         raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="There isn't user with such login",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return current_user
