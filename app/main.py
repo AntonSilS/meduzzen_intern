@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.log_config import LoggingConfig
-from routers import users, auth
+from routers import users, auth, companies
 from db.connect import init_postgres_db, init_redis_db
 from utils.service_config import settings
 
@@ -26,7 +26,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(users.router)
-
+app.include_router(companies.router)
 
 @app.on_event("startup")
 async def on_startup():

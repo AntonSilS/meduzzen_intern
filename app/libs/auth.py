@@ -61,7 +61,7 @@ async def get_current_user(
 
     login = get_login(payload=payload, token_mark=token_mark, credentials_exception=credentials_exception)
 
-    current_user: UserFromModels = await UserFromRepository(async_session).get_user_by_login(login=login)
+    current_user: UserFromModels = await UserFromRepository(async_session, UserFromModels).get_user_by_login(login=login)
     if current_user is None and token_mark == "auth0_mark":
         user_model = SignUpRequestModel(username=login, email=login, password=login)
         current_user: UserFromModels = await UserFromRepository(async_session).create(body=user_model)

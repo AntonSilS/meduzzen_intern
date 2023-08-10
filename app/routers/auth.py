@@ -32,7 +32,7 @@ async def sign_in(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    current_user: UserFromModels = await UserFromRepository(async_session).get_user_by_login(sign_in_body.email)
+    current_user: UserFromModels = await UserFromRepository(async_session, UserFromModels).get_user_by_login(sign_in_body.email)
     if not current_user:
         raise credentials_exception
     if not Hash.verify_password(sign_in_body.password, current_user.password):
