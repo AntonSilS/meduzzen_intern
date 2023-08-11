@@ -5,24 +5,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from core.log_config import LoggingConfig
-from libs.auth import get_current_user
-from repository.users import UsersRepository, UserRepository
 from db.connect import get_session
+from db.models import User as UserFromModels
+from repository.users import UsersRepository, UserRepository
+from libs.auth import get_current_user
 from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
 from schemas.auth import UserWithPermission
 
-from db.models import User as UserFromModels
 
 router = APIRouter(prefix="/users", tags=["user"])
 LoggingConfig.configure_logging()
 
 
 def get_user_instance(async_session: AsyncSession = Depends(get_session)) -> UserRepository:
-    return UserRepository(async_session)
+    return UserRepository(async_session, UserFromModels)
 
 
 def get_users_instance(async_session: AsyncSession = Depends(get_session)) -> UsersRepository:
-    return UsersRepository(async_session)
+    return UsersRepository(async_session, UserFromModels)
 
 
 def is_superuser(current_user: UserFromModels) -> bool:
@@ -57,7 +57,7 @@ async def get_user(
         user_instance: UserRepository = Depends(get_user_instance)
 ):
     try:
-        cur_user = await user_instance.get(user_id=user_id)
+        cur_user = await user_instance.get(entity_id=user_id)
         logging.info(f"Got users: {cur_user.username} (id: {cur_user.id})")
         return cur_user
 
@@ -111,7 +111,7 @@ async def delete_user(
         user_instance: UserRepository = Depends(get_user_instance),
 ):
     try:
-        await user_instance.delete(user_id=user_id)
+        await user_instance.delete(entity_id=user_id)
         logging.info(f"User with user_id: {user_id} was deleted")
         return {f"User with id:{user_id} - deleted"}
 
