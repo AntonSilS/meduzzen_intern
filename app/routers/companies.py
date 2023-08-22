@@ -31,6 +31,15 @@ def user_permission_company(current_user: Annotated[UserFromModels, Depends(get_
         raise HTTPException(status_code=403, detail="Forbidden action")
 
 
+def user_permission_member(current_user: Annotated[UserFromModels, Depends(get_current_user)],
+                            company_id: int) -> UserFromModels:
+    if is_superuser(current_user) or company_id in [comp.id for comp in current_user.member_of_companies]:
+        logging.error(f"User with: user_id - {current_user.id} and name - {current_user.username} got permission")
+        return current_user
+    else:
+        raise HTTPException(status_code=403, detail="Forbidden action")
+
+
 def get_company_instance(async_session: AsyncSession = Depends(get_session)) -> CompanyRepository:
     return CompanyRepository(async_session, CompanyFromModels)
 
@@ -120,3 +129,54 @@ async def delete_company(
     except NoResultFound:
         logging.error("Tried to get non-existent company")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
+
+
+@router.delete("/{company_id}/members/{member_id}")
+async def remove_member(
+        company_id: int,
+        member_id: int,
+        current_user: UserWithPermission = Depends(user_permission_company),
+        company_instance: CompanyRepository = Depends(get_company_instance),
+):
+    try:
+        await company_instance.delete_member(company_id=company_id, member_id=member_id)
+        logging.info(f"Member with id: {member_id} was deleted by user {current_user.username} from company {company_id}")
+        return {f"Member with id: {member_id} - deleted by user {current_user.username} from company {company_id}"}
+
+    except NoResultFound:
+        logging.error("Tried to delete from non-existent company or member")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company or memer")
+
+
+@router.delete("/{company_id}/leave")
+async def leave_company(
+        company_id: int,
+        current_user: UserWithPermission = Depends(user_permission_member),
+        company_instance: CompanyRepository = Depends(get_company_instance),
+):
+    try:
+        await company_instance.delete_member(company_id=company_id, member_id=current_user.id)
+        logging.info(
+            f"User with id: {current_user.id} left company {company_id}")
+        return {f"User with id: {current_user.id} left company {company_id}"}
+
+    except NoResultFound:
+        logging.error("Tried to delete from non-existent company")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
+
+@router.get("/{company_id}/users")
+def list_users(company_id: int):
+    pass
+
+
+# @router.post("/{company_id}/members")
+# async def list_members(
+#         company_id: int,
+#         current_user: UserWithPermission = Depends(user_permission_company),
+#         # company_instance: CompanyRepository = Depends(get_company_instance)
+#         companies_instance: CompaniesRepository = Depends(get_companies_instance)
+# ):
+#     all_ = await companies_instance.paginate_query(entity=CompanyFromModels, page=pagination.page,
+#                                                             page_size=pagination.page_size)
+#     logging.info("Got all companies")
+#     return all_companies
