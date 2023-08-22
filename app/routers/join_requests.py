@@ -2,18 +2,14 @@ import logging
 from typing import List, Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from core.log_config import LoggingConfig
 from libs.auth import get_current_user
-from repository.base import BaseEntityRepository
-from repository.companies import CompaniesRepository, CompanyRepository
 from repository.join_requests import JoinRequestRepository, JoinRequestsRepository
 from db.connect import get_session
-from db.models import Company as CompanyFromModels, User as UserFromModels, StatusActionForResponse, \
-    Action as ActionFromModels, TypeAction
-from schemas.action import ActionDetailResponse, ActionRequestModel
-from schemas.companies import CompanyUpdateRequestModel, CompanyDetailResponse, CompanyRequestModel
+from db.models import User as UserFromModels, StatusActionForResponse, Action as ActionFromModels
+from schemas.action import ActionDetailResponse
 from schemas.users import PaginationParams
 from schemas.auth import UserWithPermission
 

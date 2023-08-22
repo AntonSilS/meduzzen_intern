@@ -163,20 +163,3 @@ async def leave_company(
     except NoResultFound:
         logging.error("Tried to delete from non-existent company")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
-
-@router.get("/{company_id}/users")
-def list_users(company_id: int):
-    pass
-
-
-# @router.post("/{company_id}/members")
-# async def list_members(
-#         company_id: int,
-#         current_user: UserWithPermission = Depends(user_permission_company),
-#         # company_instance: CompanyRepository = Depends(get_company_instance)
-#         companies_instance: CompaniesRepository = Depends(get_companies_instance)
-# ):
-#     all_ = await companies_instance.paginate_query(entity=CompanyFromModels, page=pagination.page,
-#                                                             page_size=pagination.page_size)
-#     logging.info("Got all companies")
-#     return all_companies
