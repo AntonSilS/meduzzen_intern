@@ -1,40 +1,19 @@
 import logging
 from typing import List, Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from core.log_config import LoggingConfig
-from db.connect import get_session
 from db.models import User as UserFromModels
 from repository.users import UsersRepository, UserRepository
 from libs.auth import get_current_user
 from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
 from schemas.auth import UserWithPermission
-
+from repository.service_repo_instance import get_user_instance, get_users_instance
+from utils.service_permission import user_permission
 
 router = APIRouter(prefix="/users", tags=["user"])
 LoggingConfig.configure_logging()
-
-
-def get_user_instance(async_session: AsyncSession = Depends(get_session)) -> UserRepository:
-    return UserRepository(async_session, UserFromModels)
-
-
-def get_users_instance(async_session: AsyncSession = Depends(get_session)) -> UsersRepository:
-    return UsersRepository(async_session, UserFromModels)
-
-
-def is_superuser(current_user: UserFromModels) -> bool:
-    return current_user.is_superuser
-
-
-def user_permission(current_user: Annotated[UserFromModels, Depends(get_current_user)], user_id: int) -> UserFromModels:
-    if is_superuser(current_user) or current_user.id == user_id:
-        logging.error(f"User with: user_id - {current_user.id} and name - {current_user.username} got permission")
-        return current_user
-    else:
-        raise HTTPException(status_code=403, detail="Forbidden action")
 
 
 @router.get("/", response_model=List[UserDetailResponse])

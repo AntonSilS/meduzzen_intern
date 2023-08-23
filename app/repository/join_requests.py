@@ -7,12 +7,12 @@ from .base import BaseEntitiesRepository, BaseEntityRepository
 
 class JoinRequestsRepository(BaseEntitiesRepository):
     async def paginate_query(self, user_id: int, page: int, page_size: int) -> List[ActionFromModels]:
-        skip = (page - 1) * page_size
 
         stmt = select(self.entity).where((self.entity.type_action == TypeAction.JOIN_REQUEST) &
-                                         (self.entity.sender_id == user_id)).limit(page_size).offset(skip)
+                                         (self.entity.sender_id == user_id)).limit(page_size)
+        stmt_with_pagination = self.apply_pagination(stmt, page, page_size)
 
-        res = await self.async_session.execute(stmt)
+        res = await self.async_session.execute(stmt_with_pagination)
         entities = res.scalars().all()
         return entities
 

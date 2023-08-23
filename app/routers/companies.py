@@ -1,51 +1,20 @@
 import logging
 from typing import List, Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from core.log_config import LoggingConfig
 from libs.auth import get_current_user
 from repository.companies import CompaniesRepository, CompanyRepository
-from db.connect import get_session
 from db.models import Company as CompanyFromModels, User as UserFromModels
 from schemas.companies import CompanyUpdateRequestModel, CompanyDetailResponse, CompanyRequestModel
 from schemas.users import PaginationParams
 from schemas.auth import UserWithPermission
-
+from utils.service_permission import user_permission_company, user_permission_member
+from repository.service_repo_instance import get_company_instance, get_companies_instance
 
 router = APIRouter(prefix="/companies", tags=["company"])
 LoggingConfig.configure_logging()
-
-
-def is_superuser(current_user: UserFromModels) -> bool:
-    return current_user.is_superuser
-
-
-def user_permission_company(current_user: Annotated[UserFromModels, Depends(get_current_user)],
-                            company_id: int) -> UserFromModels:
-    if is_superuser(current_user) or company_id in [comp.id for comp in current_user.owner_of_companies]:
-        logging.error(f"User with: user_id - {current_user.id} and name - {current_user.username} got permission")
-        return current_user
-    else:
-        raise HTTPException(status_code=403, detail="Forbidden action")
-
-
-def user_permission_member(current_user: Annotated[UserFromModels, Depends(get_current_user)],
-                            company_id: int) -> UserFromModels:
-    if is_superuser(current_user) or company_id in [comp.id for comp in current_user.member_of_companies]:
-        logging.error(f"User with: user_id - {current_user.id} and name - {current_user.username} got permission")
-        return current_user
-    else:
-        raise HTTPException(status_code=403, detail="Forbidden action")
-
-
-def get_company_instance(async_session: AsyncSession = Depends(get_session)) -> CompanyRepository:
-    return CompanyRepository(async_session, CompanyFromModels)
-
-
-def get_companies_instance(async_session: AsyncSession = Depends(get_session)) -> CompaniesRepository:
-    return CompaniesRepository(async_session, CompanyFromModels)
 
 
 @router.get("/", response_model=List[CompanyDetailResponse])
@@ -140,7 +109,8 @@ async def remove_member(
 ):
     try:
         await company_instance.delete_member(company_id=company_id, member_id=member_id)
-        logging.info(f"Member with id: {member_id} was deleted by user {current_user.username} from company {company_id}")
+        logging.info(
+            f"Member with id: {member_id} was deleted by user {current_user.username} from company {company_id}")
         return {f"Member with id: {member_id} - deleted by user {current_user.username} from company {company_id}"}
 
     except NoResultFound:

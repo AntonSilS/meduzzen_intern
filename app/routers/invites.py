@@ -1,33 +1,21 @@
 import logging
-from typing import List, Annotated
+from typing import Annotated, List
 from fastapi import APIRouter, Depends, status, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound
 
 from core.log_config import LoggingConfig
 from libs.auth import get_current_user
-from repository.invites import InviteRepository, InvitesRepository
-from db.connect import get_session
-from db.models import Action as ActionFromModels, User as UserFromModels, StatusActionForResponse
-from schemas.users import PaginationParams
+from repository.invites import InviteRepository
+from db.models import User as UserFromModels, StatusActionForResponse
 from schemas.auth import UserWithPermission
 from schemas.action import ActionDetailResponse, ActionRequestModel
 from routers.companies import user_permission_company
-from routers.users import user_permission
-from routers.join_requests import convert_to_response_model
+from repository.service_repo_instance import get_invite_instance
+from schemas.users import PaginationParams, UserDetailResponse
 
 router = APIRouter(prefix="/companies", tags=["invites"])
-router_2 = APIRouter(prefix="/user-action", tags=["invites"])
 
 LoggingConfig.configure_logging()
-
-
-def get_invite_instance(async_session: AsyncSession = Depends(get_session)) -> InviteRepository:
-    return InviteRepository(async_session, ActionFromModels)
-
-
-def get_invites_instance(async_session: AsyncSession = Depends(get_session)) -> InvitesRepository:
-    return InvitesRepository(async_session, ActionFromModels)
 
 
 @router.post("/{company_id}/invitations", response_model=ActionDetailResponse,
@@ -40,7 +28,7 @@ async def send_invitation(
 ):
     new_invitation = await invite_instance.create(company_id=company_id, body=invite_req_body, user=current_user)
     logging.info(f"Created new new_invitation: {new_invitation.id})")
-    invite_response_model = convert_to_response_model(new_invitation)
+    invite_response_model = ActionDetailResponse.convert_to_response_model(new_invitation)
     return invite_response_model
 
 
@@ -80,32 +68,14 @@ async def response_invitation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found invite")
 
 
-@router_2.get("/user_id/me/invitations", response_model=List[ActionDetailResponse])
-async def list_invites(
-        user_id: int,
-        current_user: UserWithPermission = Depends(user_permission),
-        pagination: PaginationParams = Depends(),
-        invites_instance: InvitesRepository = Depends(get_invites_instance)
-):
-    all_invites_response = []
-    all_invites = await invites_instance.paginate_query(user_id=user_id, page=pagination.page,
-                                                        page_size=pagination.page_size)
-    for invite in all_invites:
-        all_invites_response.append(convert_to_response_model(invite))
-
-    logging.info("Got all invites by user {current_user.username}")
-    return all_invites_response
-
-
-@router.get("/{company_id}/invited-users", response_model=ActionDetailResponse,
-             status_code=status.HTTP_201_CREATED)
+@router.get("/{company_id}/invited-users", response_model=List[UserDetailResponse],
+            status_code=status.HTTP_201_CREATED)
 async def get_invited_users(
         company_id: int,
         current_user: UserWithPermission = Depends(user_permission_company),
+        pagination: PaginationParams = Depends(),
         invite_instance: InviteRepository = Depends(get_invite_instance)
 ):
-    pass
-    # new_invitation = await invite_instance.get(company_id=company_id, body=invite_req_body, user=current_user)
-    # logging.info(f"Created new new_invitation: {new_invitation.id})")
-    # invite_response_model = convert_to_response_model(new_invitation)
-    # return invite_response_model
+    all_invited_users = await invite_instance.paginate_query(company_id=company_id, page=pagination.page, page_size=pagination.page_size)
+    logging.info(f"Got all all_invited_users by user: {current_user.id})")
+    return all_invited_users

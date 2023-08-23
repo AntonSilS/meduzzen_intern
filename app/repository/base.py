@@ -15,10 +15,15 @@ class Paginateable:
     def __init__(self, async_session: AsyncSession):
         self.async_session = async_session
 
-    async def paginate_query(self, entity: Base, page: int, page_size: int) -> List[BaseFromModels]:
+    @staticmethod
+    def apply_pagination(stmt, page: int, page_size: int):
         skip = (page - 1) * page_size
-        stmt = select(entity).limit(page_size).offset(skip)
-        res = await self.async_session.execute(stmt)
+        return stmt.limit(page_size).offset(skip)
+
+    async def paginate_query(self, entity: Base, page: int, page_size: int) -> List[BaseFromModels]:
+        stmt = select(entity)
+        stmt_with_pagination = self.apply_pagination(stmt, page, page_size)
+        res = await self.async_session.execute(stmt_with_pagination)
         entities = res.scalars().all()
         return entities
 
