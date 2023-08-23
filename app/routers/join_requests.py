@@ -10,7 +10,6 @@ from db.models import User as UserFromModels, StatusActionForResponse
 from schemas.action import ActionDetailResponse
 from schemas.auth import UserWithPermission
 from routers.companies import user_permission_company
-from schemas.action import convert_to_response_model
 from repository.service_repo_instance import get_join_request_instance
 
 router = APIRouter(prefix="/companies", tags=["join-requests"])
@@ -22,7 +21,6 @@ LoggingConfig.configure_logging()
              status_code=status.HTTP_201_CREATED)
 async def send_join_request(
         company_id: int,
-        # join_request_req_body: ActionRequestModel,
         current_user: Annotated[UserFromModels, Depends(get_current_user)],
         join_request_instance: JoinRequestRepository = Depends(get_join_request_instance)
 ):
