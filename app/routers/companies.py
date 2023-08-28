@@ -8,7 +8,7 @@ from libs.auth import get_current_user
 from repository.companies import CompaniesRepository, CompanyRepository
 from db.models import Company as CompanyFromModels, User as UserFromModels
 from schemas.companies import CompanyUpdateRequestModel, CompanyDetailResponse, CompanyRequestModel
-from schemas.users import PaginationParams
+from schemas.users import PaginationParams, UserDetailResponse
 from schemas.auth import UserWithPermission
 from utils.service_permission import user_permission_company, user_permission_member
 from repository.service_repo_instance import get_company_instance, get_companies_instance
@@ -129,6 +129,25 @@ async def leave_company(
         logging.info(
             f"User with id: {current_user.id} left company {company_id}")
         return {f"User with id: {current_user.id} left company {company_id}"}
+
+    except NoResultFound:
+        logging.error("Tried to delete from non-existent company")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
+
+
+@router.get("/{company_id}/members", response_model=List[UserDetailResponse])
+async def get_members(
+        company_id: int,
+        current_user: Annotated[UserFromModels, Depends(get_current_user)],
+        pagination: PaginationParams = Depends(),
+        company_instance: CompanyRepository = Depends(get_company_instance),
+):
+    try:
+
+        all_members = await company_instance.paginate_query(company_id=company_id, page=pagination.page, page_size=pagination.page_size)
+        logging.info(
+            f"User with id: {current_user.id} get members of {company_id}")
+        return all_members
 
     except NoResultFound:
         logging.error("Tried to delete from non-existent company")

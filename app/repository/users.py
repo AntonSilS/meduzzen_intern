@@ -33,12 +33,16 @@ class UserRepository(BaseEntityRepository):
         return user
 
     async def get_user_by_login(self, login) -> UserFromModels:
-        stmt = select(UserFromModels).where(UserFromModels.email == login).\
+        stmt = select(UserFromModels).where(UserFromModels.email == login)
+        res = await self.async_session.execute(stmt)
+        user = res.scalars().first()
+        return user
+
+    async def get_user_with_owner_of_companies(self, user_id: int) -> UserFromModels:
+        stmt = select(UserFromModels).where(UserFromModels.id == user_id). \
             options(
-                joinedload(UserFromModels.owner_of_companies),
-                joinedload(UserFromModels.sent_actions),
-                joinedload(UserFromModels.member_of_companies)
-            )
+            joinedload(UserFromModels.owner_of_companies),
+        )
         res = await self.async_session.execute(stmt)
         user = res.scalars().first()
         return user

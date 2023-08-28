@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from db.models import Company as CompanyFromModels, User as UserFromModels
-from .base import BaseEntitiesRepository, BaseEntityRepository
+from repository.base import BaseEntitiesRepository, BaseEntityRepository, Paginateable
 from schemas.companies import CompanyRequestModel
 
 
@@ -16,7 +16,7 @@ class CompaniesRepository(BaseEntitiesRepository):
         return visible_companies
 
 
-class CompanyRepository(BaseEntityRepository):
+class CompanyRepository(BaseEntityRepository, Paginateable):
 
     async def create(self, body: CompanyRequestModel, user: UserFromModels) -> CompanyFromModels:
         return await super().create(
@@ -40,5 +40,10 @@ class CompanyRepository(BaseEntityRepository):
         await self.async_session.commit()
         await self.async_session.refresh(company)
 
-    # async def leave_company(self, company_id: int, member: UserFromModels) -> None:
-    #     await self.delete_member(company_id=company_id, member_id=member.id)
+    async def paginate_query(self, company_id: int, page: int, page_size: int) -> List[UserFromModels]:
+        stmt = select(UserFromModels).join(UserFromModels, self.entity.members). \
+            where(CompanyFromModels.id == company_id)
+        stmt_with_pagination = self.apply_pagination(stmt, page, page_size)
+        res = await self.async_session.execute(stmt_with_pagination)
+        entities = res.scalars().all()
+        return entities
