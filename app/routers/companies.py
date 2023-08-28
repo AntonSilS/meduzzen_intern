@@ -144,11 +144,69 @@ async def get_members(
 ):
     try:
 
-        all_members = await company_instance.paginate_query(company_id=company_id, page=pagination.page, page_size=pagination.page_size)
+        all_members = await company_instance.paginate_query(company_id=company_id, page=pagination.page,
+                                                            page_size=pagination.page_size, join_field="members")
         logging.info(
             f"User with id: {current_user.id} get members of {company_id}")
         return all_members
 
     except NoResultFound:
         logging.error("Tried to delete from non-existent company")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
+
+
+@router.post("/{company_id}/admins/{user_id}")
+async def assign_admin(
+        company_id: int,
+        user_id: int,
+        current_user: UserWithPermission = Depends(user_permission_company),
+        company_instance: CompanyRepository = Depends(get_company_instance)
+):
+    try:
+
+        await company_instance.assign_admin(company_id=company_id, user_id=user_id)
+        logging.info(
+            f"User with id: {user_id} assigned as admin  in company (id): {company_id}")
+        return {f"User with id: {user_id} assigned as admin  in company (id): {company_id}"}
+
+    except NoResultFound:
+        logging.error("Tried to assign non-existent user or to non-existent company")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company or user")
+
+
+@router.delete("/{company_id}/admins/{user_id}")
+async def remove_admin(
+        company_id: int,
+        user_id: int,
+        current_user: UserWithPermission = Depends(user_permission_company),
+        company_instance: CompanyRepository = Depends(get_company_instance),
+):
+    try:
+        await company_instance.delete_admin(company_id=company_id, admin_id=user_id)
+        logging.info(
+            f"Admin with id: {user_id} was deleted by user {current_user.username} from company {company_id}")
+        return {f"Admin with id: {user_id} - deleted by user {current_user.username} from company {company_id}"}
+
+    except NoResultFound:
+        logging.error("Tried to delete from non-existent company or member")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company or memer")
+
+
+@router.get("/{company_id}/admins", response_model=List[UserDetailResponse])
+async def get_admins(
+        company_id: int,
+        current_user: Annotated[UserFromModels, Depends(get_current_user)],
+        pagination: PaginationParams = Depends(),
+        company_instance: CompanyRepository = Depends(get_company_instance),
+):
+    try:
+
+        all_admins = await company_instance.paginate_query(company_id=company_id, page=pagination.page,
+                                                           page_size=pagination.page_size, join_field="admins")
+        logging.info(
+            f"User with id: {current_user.id} get admins of {company_id}")
+        return all_admins
+
+    except NoResultFound:
+        logging.error("Tried to get admins from non-existent company")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")

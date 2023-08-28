@@ -20,7 +20,7 @@ class InvitesRepository(BaseEntitiesRepository):
 
 class InviteRepository(BaseEntityRepository, Paginateable):
 
-    async def get_model_with_load_fields(self, action: ActionFromModels):
+    async def get_action_with_load_fields(self, action: ActionFromModels):
         stmt = select(ActionFromModels).where(ActionFromModels.id == action.id). \
             options(
             joinedload(ActionFromModels.sender),
@@ -38,7 +38,7 @@ class InviteRepository(BaseEntityRepository, Paginateable):
             recipient_id=body.recipient_id
         )
 
-        return await self.get_model_with_load_fields(action=action)
+        return await self.get_action_with_load_fields(action=action)
 
     async def paginate_query(self, company_id: int, page: int, page_size: int) -> List[UserFromModels]:
         stmt = select(UserFromModels).join(self.entity, UserFromModels.id == self.entity.recipient_id). \

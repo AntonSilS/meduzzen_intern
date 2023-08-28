@@ -12,7 +12,7 @@ from db.connect import Base
 
 # revision identifiers, used by Alembic.
 revision = 'e2eb242855e4'
-down_revision = '7050feae4aaa'
+down_revision = 'e109265ff840'
 branch_labels = None
 depends_on = None
 
