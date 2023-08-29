@@ -1,5 +1,6 @@
 from typing import List
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from db.models import Company as CompanyFromModels, User as UserFromModels, Action as ActionFromModels, TypeAction
 from .base import BaseEntitiesRepository, BaseEntityRepository
@@ -9,7 +10,11 @@ class JoinRequestsRepository(BaseEntitiesRepository):
     async def paginate_query(self, user_id: int, page: int, page_size: int) -> List[ActionFromModels]:
 
         stmt = select(self.entity).where((self.entity.type_action == TypeAction.JOIN_REQUEST) &
-                                         (self.entity.sender_id == user_id)).limit(page_size)
+                                         (self.entity.sender_id == user_id)).\
+                                          options(
+                                              joinedload(ActionFromModels.sender),
+                                              joinedload(ActionFromModels.company)
+                                          )
         stmt_with_pagination = self.apply_pagination(stmt, page, page_size)
 
         res = await self.async_session.execute(stmt_with_pagination)

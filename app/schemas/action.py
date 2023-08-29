@@ -35,14 +35,3 @@ class ActionDetailResponse(ActionBase):
 class ActionRequestModel(BaseModel):
     recipient_id: int
 
-
-def convert_to_response_model(db_model: ActionFromModels) -> ActionDetailResponse:
-    return ActionDetailResponse(
-        type_action=db_model.type_action,
-        id=db_model.id,
-        company=db_model.company.company_name,
-        sender=db_model.sender.username,
-        status_action=db_model.status_action,
-        created=db_model.created,
-        updated=db_model.updated
-    )

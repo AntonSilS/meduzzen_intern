@@ -12,6 +12,11 @@ member_company_association = Table(
     Column("user_id", Integer, ForeignKey("users.id")),
     Column("company_id", Integer, ForeignKey("company.id")))
 
+admin_company_association = Table(
+    "admin_company", Base.metadata,
+    Column("user_id", Integer, ForeignKey("users.id")),
+    Column("company_id", Integer, ForeignKey("company.id")))
+
 
 class StatusActionForResponse(str, PyEnum):
     ACCEPTED = "accepted"
@@ -45,7 +50,6 @@ class Action(Base):
     updated = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
-
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
@@ -55,6 +59,8 @@ class User(Base):
     password = Column(String, nullable=False)
     is_active = Column(Boolean, default=False)
     is_superuser = Column(Boolean, default=False)
+    admin_of_companies = relationship("Company", secondary=admin_company_association, back_populates="admins",
+                                      cascade="save-update, merge")
     status = Column(String(USERSTATUS_MAXLENGTH), default="registered")
     owner_of_companies = relationship("Company", back_populates="owner")
     member_of_companies = relationship("Company", secondary=member_company_association, back_populates="members",
@@ -74,6 +80,8 @@ class Company(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="owner_of_companies")
     members = relationship("User", secondary=member_company_association, back_populates="member_of_companies",
+                           cascade="save-update, merge")
+    admins = relationship("User", secondary=admin_company_association, back_populates="admin_of_companies",
                            cascade="save-update, merge")
     actions = relationship("Action", back_populates="company", cascade="all, delete-orphan")
     visible = Column(Boolean, default=True)
