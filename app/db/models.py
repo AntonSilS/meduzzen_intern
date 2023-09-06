@@ -5,7 +5,8 @@ from enum import Enum as PyEnum
 
 from .connect import Base
 from constants import USERNAME_MAXLENGTH, EMAIl_MAXLENGTH, USERSTATUS_MAXLENGTH, \
-    COMPANY_NAME_MAXLENGTH, DESCRIPTION_MAXLENGTH
+    COMPANY_NAME_MAXLENGTH, DESCRIPTION_MAXLENGTH, QUIZ_DESCRIPTION_MAXLENGTH, QUIZ_NAME_MAXLENGTH, \
+    QUESTION_TEXT_MAXLENGTH, ANSWER_TEXT_MAXLENGTH
 
 member_company_association = Table(
     "user_company", Base.metadata,
@@ -82,8 +83,44 @@ class Company(Base):
     members = relationship("User", secondary=member_company_association, back_populates="member_of_companies",
                            cascade="save-update, merge")
     admins = relationship("User", secondary=admin_company_association, back_populates="admin_of_companies",
-                           cascade="save-update, merge")
+                          cascade="save-update, merge")
     actions = relationship("Action", back_populates="company", cascade="all, delete-orphan")
     visible = Column(Boolean, default=True)
+    quizzes = relationship("Quiz", back_populates="company", cascade="all, delete-orphan")
+    created = Column(DateTime, default=func.now())
+    updated = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Quiz(Base):
+    __tablename__ = 'quizzes'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(QUIZ_NAME_MAXLENGTH), nullable=False)
+    description = Column(String(QUIZ_DESCRIPTION_MAXLENGTH))
+    frequency = Column(Integer, default=0)
+    company_id = Column(Integer, ForeignKey('company.id'))
+    company = relationship('Company', back_populates='quizzes')
+    questions = relationship('Question', back_populates='quiz', cascade="all, delete-orphan")
+    created = Column(DateTime, default=func.now())
+    updated = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Question(Base):
+    __tablename__ = 'questions'
+    id = Column(Integer, primary_key=True)
+    text = Column(String(QUESTION_TEXT_MAXLENGTH))
+    quiz_id = Column(Integer, ForeignKey('quizzes.id'))
+    quiz = relationship('Quiz', back_populates='questions')
+    answers = relationship('Answer', back_populates='question', cascade="all, delete-orphan")
+    created = Column(DateTime, default=func.now())
+    updated = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class Answer(Base):
+    __tablename__ = 'answers'
+    id = Column(Integer, primary_key=True)
+    text = Column(String(ANSWER_TEXT_MAXLENGTH))
+    is_correct = Column(Boolean, default=False)
+    question_id = Column(Integer, ForeignKey('questions.id'))
+    question = relationship('Question', back_populates='answers')
     created = Column(DateTime, default=func.now())
     updated = Column(DateTime, default=func.now(), onupdate=func.now())

@@ -1,3 +1,5 @@
+from typing import List, Union
+
 from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
@@ -38,11 +40,22 @@ class UserRepository(BaseEntityRepository):
         user = res.scalars().first()
         return user
 
-    async def get_user_with_owner_of_companies(self, user_id: int) -> UserFromModels:
-        stmt = select(UserFromModels).where(UserFromModels.id == user_id). \
-            options(
-            joinedload(UserFromModels.owner_of_companies),
-        )
+    async def get_user_with_loading_field(self, user_id: int, *fields_to_load: str) -> UserFromModels:
+        stmt = select(UserFromModels).where(UserFromModels.id == user_id)
+
+        for field in fields_to_load:
+            stmt = stmt.options(joinedload(field))
+
         res = await self.async_session.execute(stmt)
         user = res.scalars().first()
+        return user
+
+    async def get_user_with_owner_of_companies(self, user_id: int) -> UserFromModels:
+        return await self.get_user_with_loading_field(user_id, 'owner_of_companies', )
+
+    async def get_user_with_member_of_companies(self, user_id: int) -> UserFromModels:
+        return await self.get_user_with_loading_field(user_id, 'member_of_companies', )
+
+    async def get_user_with_admin_owner(self, user_id: int) -> UserFromModels:
+        user = await self.get_user_with_loading_field(user_id, 'owner_of_companies', 'admin_of_companies')
         return user
