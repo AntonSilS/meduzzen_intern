@@ -5,7 +5,8 @@ from typing import List, Optional, Dict
 from sqlalchemy import inspect
 
 from constants import ANSWER_TEXT_MAXLENGTH, QUESTION_TEXT_MAXLENGTH, QUIZ_NAME_MAXLENGTH, QUIZ_DESCRIPTION_MAXLENGTH
-from db.models import Quiz as QuizFromModels, Base as BaseFromModels, Question as QuestionFromModel, Answer as AnswerFromModel
+from db.models import Quiz as QuizFromModels, Base as BaseFromModels, Question as QuestionFromModel, \
+    Answer as AnswerFromModel
 
 
 class ResponseConverter:
@@ -25,8 +26,11 @@ class AnswerRequestModel(BaseModel):
     is_correct: bool = Field(default=False)
 
 
-class QuestionRequestModel(BaseModel):
+class QuestionRequestSingleModel(BaseModel):
     text: str = Field(max_length=QUESTION_TEXT_MAXLENGTH)
+
+
+class QuestionRequestModel(QuestionRequestSingleModel):
     answers: List[AnswerRequestModel]
 
     @root_validator(skip_on_failure=True)

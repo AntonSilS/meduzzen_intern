@@ -1,4 +1,4 @@
-from db.models import Quiz as QuizFromModels, Question as QuestionFormModels
+from db.models import Quiz as QuizFromModels, Question as QuestionFromModel
 from schemas.quiz import QuizRequestModel
 from .answers import AnswerRepository
 from .base import BaseEntitiesRepository, BaseEntityRepository
@@ -25,9 +25,16 @@ class QuizRepository(BaseEntityRepository):
     async def get_quiz_with_questions(self, quiz_id: int):
         quiz_with_load_questions = await self.get_entity_with_loading_field(QuizFromModels, quiz_id, 'questions')
         quiz_with_load_questions.questions = [
-            await self.get_entity_with_loading_field(QuestionFormModels, question.id, 'answers') for question in
+            await self.get_entity_with_loading_field(QuestionFromModel, question.id, 'answers') for question in
             quiz_with_load_questions.questions]
         return quiz_with_load_questions
+
+    async def add_single_question(self, quiz_id: int, question: QuestionFromModel) -> QuizFromModels:
+        quiz = await self.get_quiz_with_questions(quiz_id=quiz_id)
+        quiz.questions.append(question)
+        await self.async_session.commit()
+        await self.async_session.refresh(quiz)
+        return quiz
 
 
 class QuizzesRepository(BaseEntitiesRepository, QuizRepository):
