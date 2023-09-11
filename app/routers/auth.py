@@ -1,6 +1,5 @@
 import logging
 from datetime import timedelta
-from typing import Annotated
 from fastapi import APIRouter, Depends, status, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -24,7 +23,7 @@ LoggingConfig.configure_logging()
 
 @router.post("/signin", response_model=Token)
 async def sign_in(
-        sign_in_body: Annotated[SignInRequestModel, Depends()],
+        sign_in_body: SignInRequestModel,
         async_session: AsyncSession = Depends(get_session)
 ):
     credentials_exception = HTTPException(
