@@ -40,7 +40,6 @@ class BaseEntitiesRepository(Paginateable):
         return res.scalars().all()
 
 
-
 class BaseEntityRepository:
 
     def __init__(self, async_session: AsyncSession, entity: BaseFromModels):
@@ -102,3 +101,12 @@ class BaseEntityRepository:
             await self.async_session.refresh(action)
         return action
 
+    async def get_entity_with_loading_field(self, entity: BaseFromModels, entity_id: int,
+                                            *fields_to_load: str) -> BaseFromModels:
+        stmt = select(entity).where(entity.id == entity_id)
+        for field in fields_to_load:
+            stmt = stmt.options(joinedload(field))
+
+        res = await self.async_session.execute(stmt)
+        entity_res = res.scalars().first()
+        return entity_res

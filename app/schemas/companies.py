@@ -8,17 +8,22 @@ from constants import COMPANY_NAME_MAXLENGTH, DESCRIPTION_MAXLENGTH
 class CompanyBase(BaseModel):
     id: int
     company_name: str
-    description: str
 
 
-class CompanyDetailResponse(CompanyBase):
-    owner_id: int
-    visible: bool
+class CompanyResponseBase(CompanyBase):
+    id: int
+    company_name: str
     created: datetime
-    updated: datetime
 
     class Config:
         orm_mode = True
+
+
+class CompanyDetailResponse(CompanyResponseBase):
+    description: str
+    owner_id: int
+    visible: bool
+    updated: datetime
 
 
 class CompanyRequestModel(BaseModel):

@@ -11,7 +11,7 @@ from schemas.auth import UserWithPermission
 from schemas.action import ActionDetailResponse, ActionRequestModel
 from routers.companies import user_permission_company
 from repository.service_repo_instance import get_invite_instance
-from schemas.users import PaginationParams, UserDetailResponse
+from schemas.users import PaginationParams, UserDetailResponse, UserResponseBase
 
 router = APIRouter(prefix="/companies", tags=["invites"])
 
@@ -68,7 +68,7 @@ async def response_invitation(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found invite")
 
 
-@router.get("/{company_id}/invited-users", response_model=List[UserDetailResponse],
+@router.get("/{company_id}/invited-users", response_model=List[UserResponseBase],
             status_code=status.HTTP_201_CREATED)
 async def get_invited_users(
         company_id: int,

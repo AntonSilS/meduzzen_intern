@@ -7,8 +7,8 @@ from core.log_config import LoggingConfig
 from libs.auth import get_current_user
 from repository.companies import CompaniesRepository, CompanyRepository
 from db.models import Company as CompanyFromModels, User as UserFromModels
-from schemas.companies import CompanyUpdateRequestModel, CompanyDetailResponse, CompanyRequestModel
-from schemas.users import PaginationParams, UserDetailResponse
+from schemas.companies import CompanyUpdateRequestModel, CompanyDetailResponse, CompanyRequestModel, CompanyResponseBase
+from schemas.users import PaginationParams, UserDetailResponse, UserResponseBase
 from schemas.auth import UserWithPermission
 from utils.service_permission import user_permission_company, user_permission_member
 from repository.service_repo_instance import get_company_instance, get_companies_instance
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/companies", tags=["company"])
 LoggingConfig.configure_logging()
 
 
-@router.get("/", response_model=List[CompanyDetailResponse])
+@router.get("/", response_model=List[CompanyResponseBase])
 async def get_companies(
         current_user: Annotated[UserFromModels, Depends(get_current_user)],
         pagination: PaginationParams = Depends(),
@@ -135,7 +135,7 @@ async def leave_company(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company")
 
 
-@router.get("/{company_id}/members", response_model=List[UserDetailResponse])
+@router.get("/{company_id}/members", response_model=List[UserResponseBase])
 async def get_members(
         company_id: int,
         current_user: Annotated[UserFromModels, Depends(get_current_user)],
@@ -192,7 +192,7 @@ async def remove_admin(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found company or memer")
 
 
-@router.get("/{company_id}/admins", response_model=List[UserDetailResponse])
+@router.get("/{company_id}/admins", response_model=List[UserResponseBase])
 async def get_admins(
         company_id: int,
         current_user: Annotated[UserFromModels, Depends(get_current_user)],

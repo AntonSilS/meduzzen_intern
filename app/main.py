@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core.log_config import LoggingConfig
-from routers import users, auth, companies, invites, join_requests, user_action
+from routers import users, auth, companies, invites, join_requests, user_action, quizzes, questions, answers
 from db.connect import init_postgres_db, init_redis_db
 from utils.service_config import settings
 
@@ -30,6 +30,9 @@ app.include_router(companies.router)
 app.include_router(invites.router)
 app.include_router(join_requests.router)
 app.include_router(user_action.router)
+app.include_router(quizzes.router)
+app.include_router(questions.router)
+app.include_router(answers.router)
 
 
 @app.on_event("startup")
