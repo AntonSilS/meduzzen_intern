@@ -12,7 +12,7 @@ from schemas.auth import UserWithPermission
 
 from repository.service_repo_instance import get_quiz_instance, get_answer_instance, get_question_instance, \
     get_quizzes_instance
-from schemas.quiz import QuizRequestModel, QuizUpdateRequestModel, QuizResponseModel
+from schemas.quiz import QuizRequestModel, QuizUpdateRequestModel, QuizResponseModel, QuizBaseResponse
 from schemas.users import PaginationParams
 from utils.service_permission import user_permission_admin_owner
 from db.models import Quiz as QuizFromModels
@@ -21,6 +21,33 @@ router = APIRouter(prefix="/companies", tags=["quizzes"])
 
 LoggingConfig.configure_logging()
 
+
+@router.get("/{company_id}/quizzes", response_model=List[QuizBaseResponse])
+async def get_quizzes(
+        company_id: int,
+        current_user: UserWithPermission = Depends(user_permission_admin_owner),
+        pagination: PaginationParams = Depends(),
+        quizzes_instance: QuizzesRepository = Depends(get_quizzes_instance)
+):
+    all_quizzes = await quizzes_instance.paginate_query(company_id=company_id, page=pagination.page, page_size=pagination.page_size)
+
+    logging.info(f"Got all quizzes by user id: {current_user.id} in company with id: {company_id}")
+    return all_quizzes
+
+
+@router.get("/{company_id}/quizzes/{quiz_id}", response_model=QuizResponseModel)
+async def get_quiz(
+        company_id: int,
+        quiz_id: int,
+        # quiz_update_body: QuizRequestModel,
+        current_user: UserWithPermission = Depends(user_permission_admin_owner),
+        quiz_instance: QuizRepository = Depends(get_quiz_instance)
+):
+    quiz = await quiz_instance.get(entity_id=quiz_id)
+    quiz_with_loaded_field = await quiz_instance.get_quiz_with_questions(quiz_id=quiz_id)
+    logging.info(f"Got quiz with id: {quiz_id} by user with id {current_user}")
+    quiz_response = QuizResponseModel.convert_quiz_db_to_response(quiz_db_model=quiz_with_loaded_field)
+    return quiz_response
 
 @router.post("/{company_id}/quizzes", response_model=QuizResponseModel,
              status_code=status.HTTP_201_CREATED)
@@ -72,17 +99,4 @@ async def delete_quiz(
     return {f"Deleted quiz with id: {quiz_id}"}
 
 
-@router.get("/{company_id}/quizzes", response_model=List[QuizResponseModel])
-async def get_quizzes(
-        company_id: int,
-        current_user: UserWithPermission = Depends(user_permission_admin_owner),
-        pagination: PaginationParams = Depends(),
-        quizzes_instance: QuizzesRepository = Depends(get_quizzes_instance)
-):
-    all_quizzes = await quizzes_instance.paginate_query(entity=QuizFromModels, page=pagination.page,
-                                                        page_size=pagination.page_size)
-    load_all_quizzes = [await quizzes_instance.get_quiz_with_questions(quiz_id=quiz.id) for quiz in all_quizzes]
-    all_quizzes_response = [QuizResponseModel.convert_quiz_db_to_response(quiz_db_model=load_quiz)
-                            for load_quiz in load_all_quizzes]
-    logging.info(f"Got all quizzes by user id: {current_user.id} in company with id: {company_id}")
-    return all_quizzes_response
+

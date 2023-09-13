@@ -101,7 +101,8 @@ class BaseEntityRepository:
             await self.async_session.refresh(action)
         return action
 
-    async def get_entity_with_loading_field(self, entity: BaseFromModels, entity_id: int, *fields_to_load: str) -> BaseFromModels:
+    async def get_entity_with_loading_field(self, entity: BaseFromModels, entity_id: int,
+                                            *fields_to_load: str) -> BaseFromModels:
         stmt = select(entity).where(entity.id == entity_id)
         for field in fields_to_load:
             stmt = stmt.options(joinedload(field))

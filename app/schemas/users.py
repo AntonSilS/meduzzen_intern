@@ -16,15 +16,19 @@ class UserBase(BaseModel):
     email: str
 
 
-class UserDetailResponse(UserBase):
+class UserResponseBase(UserBase):
+    created: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class UserDetailResponse(UserResponseBase):
     phones: List[str] = []
     status: str = Field(default="registered")
     is_active: bool = Field(alias="active", default=False)
     created: datetime
     updated: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class UserStatus(BaseModel):

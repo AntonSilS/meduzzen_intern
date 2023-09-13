@@ -44,12 +44,21 @@ async def update_answer(
         answer_id: int,
         answer_update_body: AnswerUpdateRequestModel,
         current_user: UserWithPermission = Depends(user_permission_admin_owner),
-        answer_instance: AnswerRepository = Depends(get_answer_instance)
+        answer_instance: AnswerRepository = Depends(get_answer_instance),
+        question_instance: QuestionRepository = Depends(get_question_instance)
 ):
     try:
+        answer = await answer_instance.get(entity_id=answer_id)
+        if not answer_update_body.is_correct and answer.is_correct:
+            if not await question_instance.validate_sum_correct_answ(question_id=question_id):
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                    detail="Question should have at least 1 correct answer. Updating answer is forbidden")
         updated_answer = await answer_instance.update(entity_id=answer_id, body=answer_update_body)
         logging.info(f"Updated answer with id: {answer_id} in question with id: {question_id}")
         return AnswerResponseModel.convert_answer_db_to_response(updated_answer)
+
+
+
 
     except NoResultFound:
         logging.error("Tried to get non-existent answer")
@@ -64,9 +73,13 @@ async def delete_answer(
         question_id: int,
         answer_id: int,
         current_user: UserWithPermission = Depends(user_permission_admin_owner),
-        answer_instance: AnswerRepository = Depends(get_answer_instance)
+        answer_instance: AnswerRepository = Depends(get_answer_instance),
+        question_instance: QuestionRepository = Depends(get_question_instance)
 ):
     try:
+        if not await question_instance.validate_sum_answers(question_id=question_id):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail="Question should have at least 2 answers. Deleting answer is forbidden")
         await answer_instance.delete(entity_id=answer_id)
         logging.info(f"Deleted answer with id: {answer_id}")
         return {f"Deleted answer with id: {answer_id}"}

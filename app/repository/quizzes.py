@@ -1,3 +1,7 @@
+from typing import List
+
+from sqlalchemy import select
+
 from db.models import Quiz as QuizFromModels, Question as QuestionFromModel
 from schemas.quiz import QuizRequestModel
 from .answers import AnswerRepository
@@ -36,6 +40,15 @@ class QuizRepository(BaseEntityRepository):
         await self.async_session.refresh(quiz)
         return quiz
 
+    async def validate(self, quiz_id: int) -> bool:
+        quiz = await self.get_quiz_with_questions(quiz_id=quiz_id)
+        return len(quiz.questions) > 2
+
 
 class QuizzesRepository(BaseEntitiesRepository, QuizRepository):
-    pass
+    async def paginate_query(self, page: int, page_size: int, company_id: int) -> List[QuizFromModels]:
+        stmt = select(self.entity).where(self.entity.company_id == company_id)
+        stmt_with_pagination = self.apply_pagination(stmt, page, page_size)
+        res = await self.async_session.execute(stmt_with_pagination)
+        entities = res.scalars().all()
+        return entities

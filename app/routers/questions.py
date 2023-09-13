@@ -10,7 +10,7 @@ from repository.quizzes import QuizRepository
 from schemas.auth import UserWithPermission
 
 from repository.service_repo_instance import get_quiz_instance, get_answer_instance, get_question_instance
-from schemas.quiz import QuestionUpdateRequestModel,QuestionResponseModel, QuestionRequestSingleModel
+from schemas.quiz import QuestionUpdateRequestModel, QuestionResponseModel, QuestionRequestModel
 
 from utils.service_permission import user_permission_admin_owner
 from db.models import Question as QuestionFormModels
@@ -25,13 +25,15 @@ LoggingConfig.configure_logging()
 async def create_question(
         company_id: int,
         quiz_id: int,
-        question_body: QuestionRequestSingleModel,
+        question_body: QuestionRequestModel,
         current_user: UserWithPermission = Depends(user_permission_admin_owner),
         answer_instance: AnswerRepository = Depends(get_answer_instance),
         question_instance: QuestionRepository = Depends(get_question_instance),
         quiz_instance: QuizRepository = Depends(get_quiz_instance)
 ):
-    new_question = await question_instance.create(text=question_body.text)
+
+    new_question = await question_instance.create(quiz_id=quiz_id, question_body=question_body, answers_repo=answer_instance)
+
     updated_quiz = await quiz_instance.add_single_question(quiz_id=quiz_id, question=new_question)
     logging.info(f"Created new question with id: {new_question.id} in quiz with id: {quiz_id}")
     load_question = await question_instance.get_entity_with_loading_field(QuestionFormModels, new_question.id,
@@ -69,12 +71,18 @@ async def delete_question(
         quiz_id: int,
         question_id: int,
         current_user: UserWithPermission = Depends(user_permission_admin_owner),
-        question_instance: QuestionRepository = Depends(get_question_instance)
+        question_instance: QuestionRepository = Depends(get_question_instance),
+        quiz_instance: QuizRepository = Depends(get_quiz_instance)
 ):
     try:
-        await question_instance.delete(entity_id=question_id)
-        logging.info(f"Deleted question with id: {question_id}")
-        return {f"Deleted question with id: {question_id}"}
+        if await quiz_instance.validate(quiz_id=quiz_id):
+            await question_instance.delete(entity_id=question_id)
+            logging.info(f"Deleted question with id: {question_id}")
+            return {f"Deleted question with id: {question_id}"}
+        else:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail="Quiz should have at least two questions. Deleting this question is forbidden")
+
     except NoResultFound:
         logging.error("Tried to get non-existent question")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found question")

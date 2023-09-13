@@ -7,7 +7,8 @@ from core.log_config import LoggingConfig
 from db.models import User as UserFromModels
 from repository.users import UsersRepository, UserRepository
 from libs.auth import get_current_user
-from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams
+from schemas.users import UserUpdateRequestModel, UserStatus, UserDetailResponse, PaginationParams, UserBase, \
+    UserResponseBase
 from schemas.auth import UserWithPermission
 from repository.service_repo_instance import get_user_instance, get_users_instance
 from utils.service_permission import user_permission
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/users", tags=["user"])
 LoggingConfig.configure_logging()
 
 
-@router.get("/", response_model=List[UserDetailResponse])
+@router.get("/", response_model=List[UserResponseBase])
 async def get_users(
         current_user: Annotated[UserFromModels, Depends(get_current_user)],
         pagination: PaginationParams = Depends(),

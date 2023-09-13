@@ -26,11 +26,8 @@ class AnswerRequestModel(BaseModel):
     is_correct: bool = Field(default=False)
 
 
-class QuestionRequestSingleModel(BaseModel):
+class QuestionRequestModel(BaseModel):
     text: str = Field(max_length=QUESTION_TEXT_MAXLENGTH)
-
-
-class QuestionRequestModel(QuestionRequestSingleModel):
     answers: List[AnswerRequestModel]
 
     @root_validator(skip_on_failure=True)
@@ -38,8 +35,8 @@ class QuestionRequestModel(QuestionRequestSingleModel):
         answers = values.get('answers', [])
         if len(answers) < 2:
             raise ValueError("A question should have at least 2 answers")
-        if sum(answer.is_correct for answer in answers) != 1:
-            raise ValueError("There should be exactly one correct answer")
+        if sum(answer.is_correct for answer in answers) < 1:
+            raise ValueError("There should be at least 1 correct answer")
         return values
 
 
@@ -94,18 +91,21 @@ class QuestionResponseModel(BaseModel, ResponseConverter):
         return question_response
 
 
-class QuizResponseModel(BaseModel, ResponseConverter):
+class QuizBaseResponse(BaseModel):
     id: int
     name: str
-    description: str
     frequency: int = Field(default=0)
     company_id: int
     created: datetime
-    updated: datetime
-    questions: List[QuestionResponseModel]
 
     class Config:
         orm_mode = True
+
+
+class QuizResponseModel(QuizBaseResponse, ResponseConverter):
+    description: str
+    updated: datetime
+    questions: List[QuestionResponseModel]
 
     @classmethod
     def convert_quiz_db_to_response(cls, quiz_db_model: QuizFromModels):
